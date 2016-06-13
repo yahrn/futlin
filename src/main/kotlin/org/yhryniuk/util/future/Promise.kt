@@ -18,7 +18,7 @@ class Promise<T> {
     }
 
     fun toRichFuture(): RichFuture<T> {
-        return toRichFuture(RichJavaBasedFuture.pool)
+        return toRichFuture(RichFuture.pool)
     }
 
     fun toRichFuture(async: Executor): RichFuture<T> {
