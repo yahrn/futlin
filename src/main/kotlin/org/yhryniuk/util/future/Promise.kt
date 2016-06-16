@@ -22,6 +22,6 @@ class Promise<T> {
     }
 
     fun toRichFuture(async: Executor): RichFuture<T> {
-        return RichJavaBasedFuture(future, async)
+        return CompletableFutureBased(future, async)
     }
 }

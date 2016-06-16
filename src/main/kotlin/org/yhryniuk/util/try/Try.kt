@@ -19,7 +19,6 @@ interface Try<A> {
 
     companion object {
 
-
         fun <A> successful(a: A) =
                 Success(a)
 

@@ -1,5 +1,6 @@
 package org.yhryniuk.util.future
 
+import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
 
 /**
@@ -7,7 +8,11 @@ import java.util.concurrent.TimeUnit
  */
 object Await {
     fun <T> result(future: RichFuture<T>, duration: Duration): T {
-        return future.toCompletionFuture().get(duration.amount, duration.unit)
+        try {
+            return future.toCompletableFuture().get(duration.amount, duration.unit)
+        } catch(e: ExecutionException) {
+            throw e.cause!!
+        }
     }
 }
 
