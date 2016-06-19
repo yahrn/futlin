@@ -67,7 +67,9 @@ data class CompletableFutureBased<T>(val delegate: CompletableFuture<T>, val asy
         val promise = CompletableFuture<Throwable>()
         delegate.whenCompleteAsync(BiConsumer { value, exception ->
             if (exception != null)
-                promise.completeExceptionally(exception)
+                promise.complete(exception)
+            else
+                promise.completeExceptionally(NoSuchElementException())
         }, RichFuture.pool)
         return copy(promise)
     }

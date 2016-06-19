@@ -4,6 +4,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
 import java.lang.Thread.sleep
+import java.util.*
 import java.util.concurrent.atomic.AtomicReference
 
 /**
@@ -157,6 +158,25 @@ class RichJavaBasedFutureTest {
         assertTrue(isCatched)
     }
 
-    fun <T> RichFuture<T>.wait() = Await.result(this, 100.seconds())
+    @Test(expected = NoSuchElementException::class)
+    fun should_throw_NoSuchElementException() {
+        RichFuture.successful("test").failed().wait()
+    }
+
+    @Test
+    fun should_end_successfully_with_exception(){
+        val failed = RichFuture {
+            throw RuntimeException("asd")
+        }.failed()
+        val e: Throwable = failed.failed().wait()
+        when(e){
+            is RuntimeException -> assert(e.message == "asd")
+            else -> fail()
+        }
+    }
+
+
+    fun <T> RichFuture<T>.wait() = wait(100)
+    fun <T> RichFuture<T>.wait(i: Int) = Await.result(this, i.seconds())
 
 }

@@ -1,4 +1,5 @@
 package org.yhryniuk.util.`try`
+
 import java.util.*
 
 /**
@@ -29,8 +30,7 @@ interface Try<A> {
 
 
 class Success<A>(val value: A) : Try<A> {
-    override fun toOption(): Optional<A> =
-            Optional.of(value)
+    override fun toOption(): Optional<A> = Optional.of(value)
 
     override fun <U> foreach(f: (A) -> U) {
         f(value)
@@ -50,9 +50,8 @@ class Success<A>(val value: A) : Try<A> {
 }
 
 class Failed<A>(val exception: Throwable) : Try<A> {
-    override fun toOption(): Optional<A> =
-            Optional.empty<A>()
 
+    override fun toOption(): Optional<A> = Optional.empty<A>()
 
     override fun <U> foreach(f: (A) -> U) {
     }
