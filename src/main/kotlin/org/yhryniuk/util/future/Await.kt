@@ -23,4 +23,4 @@ fun Int.millis() = Duration(this.toLong(), TimeUnit.MILLISECONDS)
 fun Int.minutes() = Duration(this.toLong(), TimeUnit.MINUTES)
 fun Int.minute() = Duration(this.toLong(), TimeUnit.MINUTES)
 
-class Duration(val amount: Long, val unit: TimeUnit)
+data class Duration(val amount: Long, val unit: TimeUnit)

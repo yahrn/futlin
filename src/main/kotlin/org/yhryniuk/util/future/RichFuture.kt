@@ -54,10 +54,13 @@ interface RichFuture<T> {
 data class CompletableFutureBased<T>(val delegate: CompletableFuture<T>, val async: Executor) : RichFuture<T> {
     override fun onComplete(f: (Try<T>) -> Unit) {
         delegate.whenComplete { value, exception ->
-            if (exception != null)
-                Failed<T>(exception)
-            else
-                Success(value)
+            // @formatter:off
+            val tre = when(exception) {
+                is CompletionException ->  Failed<T>(exception.cause ?: nullException())
+                else                   ->  Success(value)
+            }
+            // @formatter:on
+            f(tre)
         }
     }
 
@@ -66,36 +69,43 @@ data class CompletableFutureBased<T>(val delegate: CompletableFuture<T>, val asy
     override fun failed(): RichFuture<Throwable> {
         val promise = CompletableFuture<Throwable>()
         delegate.whenCompleteAsync(BiConsumer { value, exception ->
-            if (exception != null)
-                promise.complete(exception)
-            else
-                promise.completeExceptionally(NoSuchElementException())
+            // @formatter:off
+            when(exception) {
+                is CompletionException ->  promise.complete(exception.cause ?: nullException())
+                else                   ->  promise.completeExceptionally(NoSuchElementException())
+            }
+            // @formatter:on
         }, RichFuture.pool)
         return copy(promise)
     }
 
     override fun toTry(): RichFuture<Try<T>> {
         return copy(delegate.handleAsync(BiFunction<T, Throwable, Try<T>> { value, exception ->
-            if (exception != null)
-                Try.failed(exception)
-            else
-                Try.successful(value)
+            // @formatter:off
+            when {
+                exception is CompletionException -> Try.failed<T>(exception.cause ?: nullException())
+                exception != null                -> Try.failed(exception)
+                else                             -> Try.successful(value)
+            }
+            // @formatter:on
         }, async))
     }
 
     override fun <U : T> recover(f: (Throwable) -> U): RichFuture<T> {
         return copy(delegate.handleAsync(BiFunction <T, Throwable, T> { value, exception ->
-            if (exception != null)
-                f(exception.cause ?: RuntimeException())
-            else
-                value
+            // @formatter:off
+            when(exception) {
+                is CompletionException -> f(exception.cause ?: nullException())
+                else                   ->  value
+            }
+            // @formatter:on
         }, async))
     }
 
     override fun <U> onFailure(f: (Throwable) -> U) {
         delegate.whenCompleteAsync(BiConsumer<T, Throwable> { value, exception ->
-            if (exception != null && exception.cause != null) {
-                f(exception.cause!!)
+            when (exception) {
+                is CompletionException -> f(exception.cause ?: nullException())
             }
         }, async)
     }
@@ -114,13 +124,12 @@ data class CompletableFutureBased<T>(val delegate: CompletableFuture<T>, val asy
 
     override fun filter(p: (T) -> Boolean): RichFuture<T> =
             flatMap {
-                if (p(it)) {
-                    this
-                } else {
-                    val promise = CompletableFuture<T>()
-                    promise.completeExceptionally(NoSuchElementException())
-                    copy(promise)
+                // @formatter:off
+                when {
+                    p(it) -> this
+                    else  -> Promise.exceptionally<T>(NoSuchElementException()).future(async)
                 }
+                // @formatter:on
             }
 
     override fun <B, U> zip(other: RichFuture<B>, m: (T, B) -> U): RichFuture<U> =
@@ -138,6 +147,7 @@ data class CompletableFutureBased<T>(val delegate: CompletableFuture<T>, val asy
 
     fun <B> copy(delegate: CompletableFuture<B>) = CompletableFutureBased(delegate, async)
 
+    private fun nullException() = RuntimeException("null exception")
 
 }
 

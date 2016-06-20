@@ -9,19 +9,25 @@ import java.util.concurrent.Executor
 class Promise<T> {
     val future: CompletableFuture<T> = CompletableFuture()
 
-    fun successful(t: T) {
-        future.complete(t)
+    companion object {
+        fun <T> successful(t: T) = Promise<T>().successful(t)
+
+
+        fun <T> exceptionally(throwable: Throwable) = Promise<T>().exceptionally(throwable)
+
     }
 
-    fun exceptionally(throwable: Throwable) {
-        future.completeExceptionally(throwable)
+    fun successful(t: T) = this.apply {  future.complete(t) }
+
+
+    fun exceptionally(throwable: Throwable) = this.apply { future.completeExceptionally(throwable) }
+
+
+    fun future(): RichFuture<T> {
+        return future(RichFuture.pool)
     }
 
-    fun toRichFuture(): RichFuture<T> {
-        return toRichFuture(RichFuture.pool)
-    }
-
-    fun toRichFuture(async: Executor): RichFuture<T> {
+    fun future(async: Executor): RichFuture<T> {
         return CompletableFutureBased(future, async)
     }
 }
